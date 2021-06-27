@@ -1,0 +1,70 @@
+$Style = "
+ <Title>Gestionare PC-uri</Title>
+<style>
+body { background-color:hsl(89, 43%, 51%);
+       font-family:Monospace;
+       font-size:10pt; }
+td, th { border:0px solid black; 
+         border-collapse:collapse;
+         white-space:pre; }
+th { color:blue;
+     background-color:white; }
+table, tr, td, th { padding: 5px; margin: 0px ;white-space:pre; border-style:solid; border-color:black;}
+tr:nth-child(odd) {background-color: lightgray}
+table { width:85%;margin-left:100px; margin-bottom:15px;}
+h2 {
+ font-family:Tahoma;
+ color:red;
+}
+.alert {
+ color: red; 
+ }
+.footer 
+{ color:red; 
+  margin-left:10px; 
+  font-family:Tahoma;
+  font-size:8pt;
+  font-style:italic;
+}
+</style>
+"
+
+#partea de css a tabelului, forma si compozitia + ADJUSTAT SA MEARGA CAT MAI MULTE DATE, SA NU DEA RATEU
+
+$TIME = Get-date | Select DateTime | ConvertTo-Html -Fragment
+#afiseaza data la cand a fost rulat 
+
+
+$DISK = Get-PSDrive -PSProvider FileSystem  |  select name , @{Name="used";expression={[Math]::Round($_.Used / 1GB,0) }},
+        @{Name="free"; expression={[Math]::Round($_.Free / 1GB,0) }} | ConvertTo-Html -Fragment
+#extrage informatii cum ar fi..fiecare partitie  numele/ memorie folosita / memorie libera
+
+$HDD = Get-Disk | Select HealthStatus, OperationalStatus | ConvertTo-Html -Fragment
+#extrage informatii despre starea hard discului cum ar fi starea lui si daca este operational
+
+$IP = Get-NetIPAddress -AddressState Preferred -AddressFamily IPv4 | Select-Object IPAddress | Select-Object -First 1 | ConvertTo-Html -Fragment
+#extrage IP-ul calculatorului
+
+$MACAddress = (Get-WmiObject Win32_NetworkAdapterConfiguration | where {$_.ipenabled -EQ $true}) | Select Macaddress | select-object -first 1 | ConvertTo-Html -Fragment
+#afiseaza adresa MAC 
+
+$domain =  get-wmiobject win32_computersystem | Select Domain | ConvertTo-HTML -Fragment
+#extrage domeniul calculatorului respectiv
+
+$nume = get-wmiobject win32_computersystem | Select  PSComputerName | ConvertTo-HTML -Fragment
+#extrage numele calculatorului
+
+$sistem = Get-CimInstance -ClassName Win32_OperatingSystem | Select Caption | ConvertTo-Html -Fragment
+#arata ce sistem de operare ruleaza pe respectivul calculator
+
+$sistem2 = Get-ComputerInfo | Select CSSystemType| ConvertTo-Html -Fragment
+#arata pe cati biti functioneaza procesorul 
+
+$hostname = [System.Security.Principal.WindowsIdentity]::GetCurrent() | Select Name | ConvertTo-Html -Fragment
+#Arata cu ce user este logat un utilizator pe calculatorul respectiv
+
+$Firewall = Get-netfirewallprofile | Select name, enabled | ConvertTo-Html -Fragment
+#afiseaza starea firewall-ului 
+
+ConvertTo-Html  -body "$style $TIME $DISK $nume $domain $HDD $sistem $sistem2 $IP $MACAddress  $hostname $Firewall"  | Out-File "Desktop\Rezultat.html" 
+#face conversia la toate datele colectate, ca mai apoi sa fie afisate ca un raport sub forma unui fisier .html
